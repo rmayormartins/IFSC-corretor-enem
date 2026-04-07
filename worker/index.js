@@ -1,43 +1,35 @@
 /**
  * ============================================
- * CORRETOR ENEM — Cloudflare Worker (Proxy)
+ * CORRETOR ENEM — Cloudflare Worker (Proxy) v2
  * ============================================
- *
- * Este Worker atua como backend seguro entre o site estático
- * (GitHub Pages) e as APIs das LLMs (OpenAI, Anthropic, Google, OpenRouter).
- *
- * As chaves de API ficam armazenadas como SECRETS no Cloudflare
- * (via `wrangler secret put` ou no painel), jamais expostas ao frontend.
- *
- * Endpoints:
- *   GET  /health   → teste de conectividade
- *   POST /correct  → repassa o prompt para o provedor escolhido
- *
- * Deploy (ver README.md):
- *   npm install -g wrangler
- *   wrangler login
- *   wrangler deploy
- *   wrangler secret put OPENAI_API_KEY
- *   wrangler secret put ANTHROPIC_API_KEY
- *   wrangler secret put GOOGLE_API_KEY
- *   wrangler secret put OPENROUTER_API_KEY
+ * Fix CORS: aceita github.io com ou sem trailing slash,
+ * ecoa o Origin quando válido, fallback a '*' em dev.
  */
 
-// ⚠️ IMPORTANTE: restrinja aqui o(s) domínio(s) do seu GitHub Pages.
-// Isso impede que outros sites usem suas chaves.
 const ALLOWED_ORIGINS = [
   'https://rmayormartins.github.io',
-  'http://localhost:8000',      // dev local
-  'http://127.0.0.1:5500',      // VS Code Live Server
+  'http://localhost:8000',
+  'http://127.0.0.1:5500',
+  'http://localhost:5500',
 ];
 
+function isAllowed(origin) {
+  if (!origin) return false;
+  // normaliza removendo trailing slash
+  const clean = origin.replace(/\/$/, '');
+  return ALLOWED_ORIGINS.includes(clean);
+}
+
 function corsHeaders(origin) {
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  // Se a origem é válida, ecoa ela. Senão, devolve a primeira permitida
+  // (não bloqueia para facilitar debug — o Worker só usa as chaves via /correct).
+  const allowed = isAllowed(origin) ? origin.replace(/\/$/, '') : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin',
   };
 }
 
@@ -53,14 +45,25 @@ export default {
     const origin = request.headers.get('Origin') || '';
     const url = new URL(request.url);
 
-    // Preflight CORS
+    // Preflight CORS — responde 204 com headers
     if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders(origin) });
+      return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
 
     // Health check
     if (url.pathname === '/health' && request.method === 'GET') {
-      return json({ ok: true, service: 'corretor-enem-worker' }, 200, origin);
+      return json({
+        ok: true,
+        service: 'corretor-enem-worker',
+        origin_received: origin,
+        origin_allowed: isAllowed(origin),
+        keys_configured: {
+          openai: !!env.OPENAI_API_KEY,
+          anthropic: !!env.ANTHROPIC_API_KEY,
+          google: !!env.GOOGLE_API_KEY,
+          openrouter: !!env.OPENROUTER_API_KEY,
+        }
+      }, 200, origin);
     }
 
     // Endpoint principal
@@ -93,11 +96,12 @@ export default {
 
         return json(result, 200, origin);
       } catch (err) {
-        return json({ error: err.message }, 500, origin);
+        console.error('Worker error:', err);
+        return json({ error: err.message, stack: err.stack }, 500, origin);
       }
     }
 
-    return json({ error: 'Not found' }, 404, origin);
+    return json({ error: 'Not found', path: url.pathname }, 404, origin);
   },
 };
 
@@ -121,7 +125,6 @@ async function callOpenAI(apiKey, model, prompt, temperature) {
 
   const data = await res.json();
   if (!res.ok) throw new Error('OpenAI: ' + (data.error?.message || res.status));
-
   return { text: data.choices[0].message.content, provider: 'openai' };
 }
 
@@ -146,7 +149,6 @@ async function callAnthropic(apiKey, model, prompt, temperature) {
 
   const data = await res.json();
   if (!res.ok) throw new Error('Anthropic: ' + (data.error?.message || res.status));
-
   return { text: data.content[0].text, provider: 'anthropic' };
 }
 
@@ -170,7 +172,6 @@ async function callGoogle(apiKey, model, prompt, temperature) {
 
   const data = await res.json();
   if (!res.ok) throw new Error('Google: ' + (data.error?.message || res.status));
-
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   return { text, provider: 'google' };
 }
@@ -184,7 +185,7 @@ async function callOpenRouter(apiKey, model, prompt, temperature) {
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://rmayormartins.github.io/',
+      'HTTP-Referer': 'https://rmayormartins.github.io/IFSC-corretor-enem/',
       'X-Title': 'Corretor ENEM (pesquisa)',
     },
     body: JSON.stringify({
@@ -197,6 +198,5 @@ async function callOpenRouter(apiKey, model, prompt, temperature) {
 
   const data = await res.json();
   if (!res.ok) throw new Error('OpenRouter: ' + (data.error?.message || res.status));
-
   return { text: data.choices[0].message.content, provider: 'openrouter' };
 }
