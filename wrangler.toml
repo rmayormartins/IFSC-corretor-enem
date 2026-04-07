@@ -1,0 +1,10 @@
+name = "corretor-enem-worker"
+main = "index.js"
+compatibility_date = "2025-01-01"
+
+# Observação: as chaves de API NÃO vão aqui.
+# Elas são adicionadas como SECRETS via comando:
+#   wrangler secret put OPENAI_API_KEY
+#   wrangler secret put ANTHROPIC_API_KEY
+#   wrangler secret put GOOGLE_API_KEY
+#   wrangler secret put OPENROUTER_API_KEY

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corretor ENEM · Comparador de LLMs</title>
+<meta name="description" content="Ferramenta de pesquisa para comparação de LLMs na correção de redações do ENEM segundo as 5 competências do Inep.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@400;500;700&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-mark">Nº 01</div>
+      <div class="brand-title">
+        <h1>Corretor <em>ENEM</em></h1>
+        <p>Comparador de LLMs · 5 competências do Inep</p>
+      </div>
+    </div>
+    <nav class="header-nav">
+      <span class="nav-meta">PESQUISA EDUCACIONAL</span>
+      <button id="btn-config" class="btn-ghost" aria-label="Configurações">⚙ Configurar</button>
+    </nav>
+  </div>
+  <div class="header-rule"></div>
+</header>
+
+<main class="layout">
+
+  <!-- COLUNA ESQUERDA: entrada -->
+  <section class="col-input">
+
+    <div class="section-label"><span>01</span> Entrada da redação</div>
+
+    <div class="tema-box">
+      <label for="tema">Tema proposto <span class="req">obrigatório</span></label>
+      <textarea id="tema" rows="2" placeholder="Ex.: Desafios para a valorização de comunidades e povos tradicionais no Brasil"></textarea>
+    </div>
+
+    <div class="upload-zone" id="drop-zone">
+      <input type="file" id="file-input" accept=".docx,.txt" hidden>
+      <div class="upload-inner">
+        <div class="upload-icon">↓</div>
+        <div>
+          <strong>Arraste um arquivo</strong> <span class="muted">ou</span>
+          <button class="btn-link" id="btn-browse">selecione do computador</button>
+        </div>
+        <div class="upload-formats">.docx · .txt · ou cole o texto abaixo</div>
+      </div>
+    </div>
+
+    <div class="redacao-box">
+      <div class="redacao-header">
+        <label for="redacao">Texto da redação</label>
+        <div class="redacao-stats">
+          <span id="stat-linhas">0 linhas</span>
+          <span class="sep">·</span>
+          <span id="stat-palavras">0 palavras</span>
+          <span class="sep">·</span>
+          <span id="stat-chars">0 caracteres</span>
+        </div>
+      </div>
+      <textarea id="redacao" rows="14" placeholder="Cole aqui o texto da redação, ou faça upload acima..."></textarea>
+    </div>
+
+    <div class="nota-ref">
+      <label for="nota-ref-input">Nota de referência humana <span class="muted">(opcional, para cálculo de erro)</span></label>
+      <input type="number" id="nota-ref-input" min="0" max="1000" step="20" placeholder="0–1000">
+    </div>
+
+  </section>
+
+  <!-- COLUNA DIREITA: seleção de modelos -->
+  <aside class="col-models">
+    <div class="section-label"><span>02</span> Modelos a comparar</div>
+
+    <div class="model-card" data-provider="openai">
+      <label class="model-head">
+        <input type="checkbox" id="sel-openai" checked>
+        <div class="model-name">
+          <span class="dot dot-openai"></span>
+          <strong>GPT</strong>
+          <span class="model-vendor">OpenAI</span>
+        </div>
+      </label>
+      <select class="model-select" id="model-openai">
+        <option value="gpt-4o">gpt-4o</option>
+        <option value="gpt-4o-mini">gpt-4o-mini</option>
+        <option value="gpt-4-turbo">gpt-4-turbo</option>
+      </select>
+    </div>
+
+    <div class="model-card" data-provider="anthropic">
+      <label class="model-head">
+        <input type="checkbox" id="sel-anthropic" checked>
+        <div class="model-name">
+          <span class="dot dot-anthropic"></span>
+          <strong>Claude</strong>
+          <span class="model-vendor">Anthropic</span>
+        </div>
+      </label>
+      <select class="model-select" id="model-anthropic">
+        <option value="claude-sonnet-4-5">claude-sonnet-4-5</option>
+        <option value="claude-opus-4-5">claude-opus-4-5</option>
+        <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+      </select>
+    </div>
+
+    <div class="model-card" data-provider="google">
+      <label class="model-head">
+        <input type="checkbox" id="sel-google" checked>
+        <div class="model-name">
+          <span class="dot dot-google"></span>
+          <strong>Gemini</strong>
+          <span class="model-vendor">Google</span>
+        </div>
+      </label>
+      <select class="model-select" id="model-google">
+        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+        <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+      </select>
+    </div>
+
+    <div class="model-card" data-provider="openrouter">
+      <label class="model-head">
+        <input type="checkbox" id="sel-openrouter" checked>
+        <div class="model-name">
+          <span class="dot dot-os"></span>
+          <strong>Open-source</strong>
+          <span class="model-vendor">via OpenRouter</span>
+        </div>
+      </label>
+      <select class="model-select" id="model-openrouter">
+        <option value="meta-llama/llama-3.3-70b-instruct">llama-3.3-70b</option>
+        <option value="qwen/qwen-2.5-72b-instruct">qwen-2.5-72b</option>
+        <option value="deepseek/deepseek-chat">deepseek-chat</option>
+        <option value="mistralai/mistral-large">mistral-large</option>
+      </select>
+    </div>
+
+    <div class="options">
+      <label class="opt"><input type="checkbox" id="opt-parallel" checked> disparar em paralelo</label>
+      <label class="opt"><input type="checkbox" id="opt-deterministic" checked> temperatura 0</label>
+    </div>
+
+    <button id="btn-corrigir" class="btn-primary">
+      <span class="btn-label">Corrigir redação</span>
+      <span class="btn-arrow">→</span>
+    </button>
+
+    <div class="endpoint-status" id="endpoint-status">
+      <span class="status-dot"></span>
+      <span class="status-text">Verificando endpoint…</span>
+    </div>
+  </aside>
+
+</main>
+
+<!-- RESULTADOS -->
+<section class="results-section" id="results-section" hidden>
+  <div class="section-label big"><span>03</span> Resultados da correção</div>
+
+  <div class="summary-grid" id="summary-grid"></div>
+
+  <div class="competencias-header">
+    <h2>Notas por competência</h2>
+    <p class="muted">Cada competência varia de 0 a 200 pontos, conforme rubrica do Inep.</p>
+  </div>
+
+  <div class="comp-matrix" id="comp-matrix"></div>
+
+  <div class="details-grid" id="details-grid"></div>
+</section>
+
+<!-- MODAL CONFIG -->
+<div class="modal" id="modal-config" hidden>
+  <div class="modal-backdrop"></div>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Endpoint do Cloudflare Worker</h3>
+      <button class="btn-close" id="btn-close-config">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="muted">O endpoint do Worker guarda as chaves de API com segurança. Configure uma vez e a ferramenta salva no seu navegador.</p>
+      <label for="worker-url">URL do Worker</label>
+      <input type="url" id="worker-url" placeholder="https://corretor-enem.seu-usuario.workers.dev">
+      <div class="hint">
+        <strong>Como obter:</strong> siga o <code>README.md</code> do repositório para deploy do Worker no Cloudflare (grátis, 5 minutos).
+      </div>
+      <button class="btn-primary" id="btn-save-config">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading-overlay" hidden>
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loading-text">Corrigindo…</div>
+    <div class="loading-models" id="loading-models"></div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div>
+      <strong>Corretor ENEM</strong> · ferramenta de pesquisa para comparação de LLMs
+    </div>
+    <div class="footer-meta">
+      <span>Rubrica baseada nas 5 competências do Inep</span>
+      <span class="sep">·</span>
+      <span>Não substitui avaliação humana</span>
+    </div>
+  </div>
+</footer>
+
+<script src="rubrica.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
