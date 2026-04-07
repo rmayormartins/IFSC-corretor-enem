@@ -1,10 +1,11 @@
 name = "corretor-enem-worker"
 main = "index.js"
 compatibility_date = "2025-01-01"
+account_id = "8115cde10f3f89424560d3669ad0110f"
 
-# Observação: as chaves de API NÃO vão aqui.
-# Elas são adicionadas como SECRETS via comando:
-#   wrangler secret put OPENAI_API_KEY
-#   wrangler secret put ANTHROPIC_API_KEY
-#   wrangler secret put GOOGLE_API_KEY
-#   wrangler secret put OPENROUTER_API_KEY
+# As chaves abaixo NÃO vão aqui.
+# Cadastre no painel da Cloudflare como Secrets:
+# OPENAI_API_KEY
+# ANTHROPIC_API_KEY
+# GOOGLE_API_KEY
+# OPENROUTER_API_KEY
