@@ -71,6 +71,17 @@ async function handleFile(file) {
   }
 }
 
+const DEFAULT_WORKER_URL = "https://corretor-enem-worker.rmayormartins.workers.dev";
+
+function getWorkerUrl() {
+  try {
+    const saved = localStorage.getItem("corretor-enem-worker-url");
+    return saved || DEFAULT_WORKER_URL;
+  } catch (_) {
+    return DEFAULT_WORKER_URL;
+  }
+}
+
 // ============== STATS DA REDAÇÃO ==============
 function updateStats() {
   const text = redacaoTextarea.value;
