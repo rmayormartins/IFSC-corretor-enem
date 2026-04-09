@@ -251,9 +251,18 @@ async function callProviderSafe(sel, prompt, deterministic) {
 
     let parsed;
     try {
-      const raw = (data.text || '').replace(/```json|```/g, '').trim();
-      const match = raw.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(match ? match[0] : raw);
+      // Parser robusto: remove markdown code fences e pega o maior bloco JSON
+      // entre o primeiro { e o último }. Tolera preâmbulos, posfácios, markdown.
+      let raw = (data.text || '')
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      const firstBrace = raw.indexOf('{');
+      const lastBrace = raw.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        raw = raw.substring(firstBrace, lastBrace + 1);
+      }
+      parsed = JSON.parse(raw);
     } catch (e) {
       return { error: 'Resposta não é JSON válido: ' + (data.text || '').slice(0, 120), elapsed, model: sel.model };
     }
