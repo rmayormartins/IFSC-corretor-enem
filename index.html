@@ -77,6 +77,54 @@
       <input type="number" id="nota-ref-input" min="0" max="1000" step="20" placeholder="0–1000">
     </div>
 
+    <!-- PAINEL DE PROMPT (colapsável) -->
+    <details class="prompt-panel" id="prompt-panel">
+      <summary>
+        <span class="prompt-summary-label">
+          <span class="section-label" style="margin:0">
+            <span>★</span> Engenharia de prompt <span class="muted" id="prompt-status">(padrão)</span>
+          </span>
+        </span>
+        <span class="prompt-toggle-hint">clique para expandir ▾</span>
+      </summary>
+      <div class="prompt-panel-body">
+        <p class="muted" style="margin-bottom:12px;font-size:12px">
+          Edite o template enviado para as LLMs. A rubrica do Inep é fixa (preservada em <code>{{RUBRICA}}</code>) —
+          você altera apenas as instruções em volta. Placeholders disponíveis:
+          <code>{{RUBRICA}}</code>, <code>{{ZERAMENTO}}</code>, <code>{{TEMA}}</code>, <code>{{REDACAO}}</code>.
+        </p>
+
+        <div class="prompt-profiles">
+          <label for="profile-select" class="profile-label">Perfis salvos:</label>
+          <select id="profile-select" class="profile-select">
+            <option value="">— selecione —</option>
+          </select>
+          <button type="button" id="btn-load-profile" class="btn-mini">Carregar</button>
+          <button type="button" id="btn-delete-profile" class="btn-mini btn-danger">Excluir</button>
+        </div>
+
+        <textarea id="prompt-template" rows="16" spellcheck="false"></textarea>
+
+        <div class="prompt-actions">
+          <button type="button" id="btn-save-prompt" class="btn-mini btn-primary-mini">Aplicar alterações</button>
+          <button type="button" id="btn-save-profile" class="btn-mini">Salvar como perfil…</button>
+          <button type="button" id="btn-reset-prompt" class="btn-mini btn-reset">↻ Restaurar padrão</button>
+          <button type="button" id="btn-preview-prompt" class="btn-mini">Preview final</button>
+        </div>
+
+        <div class="prompt-help">
+          <strong>Ideias para experimentação:</strong>
+          <ul>
+            <li><strong>Chain-of-thought:</strong> adicione "Antes de atribuir a nota, analise passo a passo cada competência."</li>
+            <li><strong>Role-playing:</strong> comece com "Você é um professor experiente da banca oficial do Inep com 10 anos de experiência."</li>
+            <li><strong>Calibração de severidade:</strong> adicione "Avaliadores do Inep tendem a pontuar conservadoramente — evite notas 200 exceto em redações excepcionais."</li>
+            <li><strong>Anti-viés:</strong> "Ignore o tamanho do texto e avalie apenas a qualidade; não penalize registro coloquial se a norma estiver correta."</li>
+            <li><strong>Few-shot:</strong> inclua 1-2 exemplos de redações já pontuadas antes do bloco {{REDACAO}}.</li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
   </section>
 
   <aside class="col-models">
@@ -255,7 +303,7 @@
       <div class="credit-institution">
         <a href="https://www.ifsc.edu.br" target="_blank" rel="noopener">IFSC — Instituto Federal de Santa Catarina</a>
       </div>
-      <div class="credit-version">v0.3 · 2026</div>
+      <div class="credit-version">v0.4 · 2026</div>
     </div>
   </div>
 </footer>
