@@ -255,8 +255,195 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--a
 .footer-meta .sep { margin: 0 8px; }
 
 /* ============================================
-   PATCH — créditos no footer (v0.3)
-   Adicionar ao FINAL do style.css
+   PAINEL DE PROMPT EDITÁVEL (v0.4)
+   ============================================ */
+
+.prompt-panel {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  margin-top: 20px;
+  transition: all 0.2s;
+}
+
+.prompt-panel.is-modified {
+  border-left: 4px solid var(--warn);
+  background: #fffaf5;
+}
+
+.prompt-panel > summary {
+  padding: 14px 18px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+  user-select: none;
+  background: var(--bg-alt);
+  border-bottom: 1px solid transparent;
+  transition: all 0.2s;
+}
+.prompt-panel > summary::-webkit-details-marker { display: none; }
+.prompt-panel > summary:hover { background: #e5e0d2; }
+
+.prompt-panel[open] > summary {
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.prompt-summary-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prompt-toggle-hint {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-mute);
+  letter-spacing: 0.05em;
+}
+
+.prompt-panel[open] > summary .prompt-toggle-hint::after {
+  content: '';
+}
+
+.prompt-modified {
+  color: var(--warn) !important;
+  font-weight: 600;
+}
+.prompt-pending {
+  color: #c97a1f !important;
+  font-weight: 600;
+}
+
+.prompt-panel-body {
+  padding: 18px;
+}
+
+.prompt-panel-body code {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--bg-alt);
+  padding: 1px 5px;
+  border: 1px solid var(--line-soft);
+  color: var(--accent);
+}
+
+.prompt-profiles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--bg-alt);
+  border: 1px solid var(--line-soft);
+  flex-wrap: wrap;
+}
+.profile-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-mute);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.profile-select {
+  flex: 1;
+  min-width: 160px;
+  font-size: 11px;
+  padding: 6px 10px;
+}
+
+#prompt-template {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.55;
+  min-height: 400px;
+  tab-size: 2;
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-mini {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all 0.2s;
+}
+.btn-mini:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btn-primary-mini {
+  background: var(--ink);
+  color: var(--paper);
+}
+.btn-primary-mini:hover {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.btn-reset {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-reset:hover {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.btn-danger {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.btn-danger:hover {
+  background: var(--warn);
+  color: var(--paper);
+}
+
+.prompt-help {
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--bg-alt);
+  border-left: 3px solid var(--accent);
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.prompt-help strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 14px;
+}
+.prompt-help ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.prompt-help li {
+  margin: 4px 0;
+}
+.prompt-help li strong {
+  display: inline;
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ============================================
+   FOOTER com créditos (v0.4)
    ============================================ */
 
 .site-footer {
@@ -294,7 +481,6 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--a
   margin: 0 6px;
 }
 
-/* Bloco de créditos autorais, alinhado à direita */
 .footer-credits {
   text-align: right;
   font-family: var(--mono);
@@ -347,7 +533,6 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--a
   border-top: 1px solid var(--line-soft);
 }
 
-/* Responsivo: em telas pequenas, empilha o footer */
 @media (max-width: 720px) {
   .footer-inner {
     flex-direction: column;
