@@ -1,6 +1,6 @@
 /* ============================================
    RUBRICA OFICIAL — 5 COMPETÊNCIAS DO INEP
-   Baseada na Cartilha do Participante do ENEM
+   + Sistema de template editável
    ============================================ */
 
 const RUBRICA_INEP = {
@@ -88,40 +88,34 @@ const RUBRICA_INEP = {
   ]
 };
 
-/* Prompt mestre que será enviado a todas as LLMs — garante comparabilidade */
-function buildPrompt(tema, redacao) {
-  const compsText = RUBRICA_INEP.competencias.map(c => {
-    const niveis = Object.entries(c.niveis)
-      .map(([nota, desc]) => `  • ${nota}: ${desc}`)
-      .join("\n");
-    return `${c.nome} — ${c.titulo}\n${c.descricao}\nNíveis possíveis (nota: descrição):\n${niveis}`;
-  }).join("\n\n");
+/* ============================================
+   TEMPLATE EDITÁVEL DO PROMPT
+   Placeholders: {{RUBRICA}}, {{ZERAMENTO}}, {{TEMA}}, {{REDACAO}}
+   ============================================ */
 
-  const zeramentoText = RUBRICA_INEP.zeramento.map(z => `  - ${z}`).join("\n");
-
-  return `Você é um avaliador de redações do ENEM treinado nas 5 competências do Inep.
+const PROMPT_TEMPLATE_DEFAULT = `Você é um avaliador de redações do ENEM treinado nas 5 competências do Inep.
 Avalie a redação abaixo seguindo ESTRITAMENTE a rubrica oficial.
 
 ═══════════════════════════════════════
 RUBRICA OFICIAL — 5 COMPETÊNCIAS DO INEP
 ═══════════════════════════════════════
 
-${compsText}
+{{RUBRICA}}
 
 ═══════════════════════════════════════
 SITUAÇÕES DE NOTA ZERO (aplicar se identificado)
 ═══════════════════════════════════════
-${zeramentoText}
+{{ZERAMENTO}}
 
 ═══════════════════════════════════════
 TEMA PROPOSTO
 ═══════════════════════════════════════
-${tema}
+{{TEMA}}
 
 ═══════════════════════════════════════
 REDAÇÃO A SER AVALIADA
 ═══════════════════════════════════════
-${redacao}
+{{REDACAO}}
 
 ═══════════════════════════════════════
 TAREFA
@@ -129,12 +123,13 @@ TAREFA
 Avalie cada uma das 5 competências atribuindo uma nota DENTRE os valores permitidos: 0, 40, 80, 120, 160, 200.
 Para cada competência, forneça:
 - "nota": valor inteiro (0, 40, 80, 120, 160 ou 200)
-- "justificativa": 1–2 frases objetivas explicando o nível atribuído
+- "justificativa": 1-2 frases objetivas explicando o nível atribuído
 - "evidencia": uma citação CURTA (até 15 palavras) do texto que fundamenta a nota, ou null se não aplicável
 - "confianca": "alta", "media" ou "baixa"
 
-Responda APENAS com um objeto JSON válido, sem texto adicional, sem markdown, sem \`\`\`, seguindo este schema:
+IMPORTANTE: Responda APENAS com um objeto JSON válido, começando com { e terminando com }. NÃO inclua markdown, NÃO use blocos de código com crase, NÃO adicione texto antes ou depois do JSON. A primeira caractere da sua resposta deve ser { e o último deve ser }.
 
+Schema esperado:
 {
   "competencias": {
     "c1": {"nota": 0-200, "justificativa": "...", "evidencia": "...", "confianca": "..."},
@@ -145,9 +140,96 @@ Responda APENAS com um objeto JSON válido, sem texto adicional, sem markdown, s
   },
   "nota_final": 0-1000,
   "zeramento": null,
-  "observacao_geral": "Comentário global de 1–2 frases."
+  "observacao_geral": "Comentário global de 1-2 frases."
 }
 
 Se identificar situação de zeramento, preencha "zeramento" com o motivo e atribua 0 em todas as competências afetadas.
-Seja consistente com a rubrica. Temperatura 0. Responda APENAS o JSON.`;
+Seja consistente com a rubrica. Responda APENAS o JSON.`;
+
+/* ============================================
+   RENDERIZADORES DA RUBRICA
+   (geram strings que substituem os placeholders)
+   ============================================ */
+
+function renderRubricaTexto() {
+  return RUBRICA_INEP.competencias.map(c => {
+    const niveis = Object.entries(c.niveis)
+      .map(([nota, desc]) => `  • ${nota}: ${desc}`)
+      .join("\n");
+    return `${c.nome} — ${c.titulo}\n${c.descricao}\nNíveis possíveis (nota: descrição):\n${niveis}`;
+  }).join("\n\n");
+}
+
+function renderZeramentoTexto() {
+  return RUBRICA_INEP.zeramento.map(z => `  - ${z}`).join("\n");
+}
+
+/* ============================================
+   buildPrompt — substitui placeholders no template
+   ============================================ */
+
+function buildPrompt(tema, redacao) {
+  // Pega o template atual (editável) ou o default
+  const template = getCurrentPromptTemplate();
+
+  return template
+    .replace('{{RUBRICA}}', renderRubricaTexto())
+    .replace('{{ZERAMENTO}}', renderZeramentoTexto())
+    .replace('{{TEMA}}', tema)
+    .replace('{{REDACAO}}', redacao);
+}
+
+/* ============================================
+   Gerenciamento de template no localStorage
+   ============================================ */
+
+const TEMPLATE_STORAGE_KEY = 'corretor-enem-prompt-template';
+const PROFILES_STORAGE_KEY = 'corretor-enem-prompt-profiles';
+
+function getCurrentPromptTemplate() {
+  return localStorage.getItem(TEMPLATE_STORAGE_KEY) || PROMPT_TEMPLATE_DEFAULT;
+}
+
+function setCurrentPromptTemplate(template) {
+  if (template === PROMPT_TEMPLATE_DEFAULT) {
+    localStorage.removeItem(TEMPLATE_STORAGE_KEY);
+  } else {
+    localStorage.setItem(TEMPLATE_STORAGE_KEY, template);
+  }
+}
+
+function isPromptModified() {
+  return getCurrentPromptTemplate() !== PROMPT_TEMPLATE_DEFAULT;
+}
+
+function resetPromptToDefault() {
+  localStorage.removeItem(TEMPLATE_STORAGE_KEY);
+}
+
+function getProfiles() {
+  try {
+    return JSON.parse(localStorage.getItem(PROFILES_STORAGE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveProfile(name, template) {
+  const profiles = getProfiles();
+  profiles[name] = {
+    template,
+    savedAt: new Date().toISOString(),
+  };
+  localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(profiles));
+}
+
+function loadProfile(name) {
+  const profiles = getProfiles();
+  return profiles[name] ? profiles[name].template : null;
+}
+
+function deleteProfile(name) {
+  const profiles = getProfiles();
+  delete profiles[name];
+  localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(profiles));
 }
