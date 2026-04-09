@@ -253,3 +253,111 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--a
 .footer-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--ink-mute); letter-spacing: 0.05em; flex-wrap: wrap; gap: 12px; }
 .footer-inner strong { font-family: var(--serif); font-size: 12px; color: var(--ink); font-weight: 600; }
 .footer-meta .sep { margin: 0 8px; }
+
+/* ============================================
+   PATCH — créditos no footer (v0.3)
+   Adicionar ao FINAL do style.css
+   ============================================ */
+
+.site-footer {
+  padding: 28px 48px;
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-mute);
+  letter-spacing: 0.05em;
+  flex: 1;
+  min-width: 260px;
+}
+.footer-brand strong {
+  font-family: var(--serif);
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.footer-brand .footer-meta {
+  margin-top: 4px;
+  font-size: 10px;
+}
+.footer-brand .footer-meta .sep {
+  margin: 0 6px;
+}
+
+/* Bloco de créditos autorais, alinhado à direita */
+.footer-credits {
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  border-left: 1px solid var(--line-soft);
+  padding-left: 24px;
+}
+
+.credit-author {
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 12px;
+  font-style: italic;
+}
+.credit-author a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+.credit-author a:hover {
+  border-bottom-color: var(--accent);
+}
+
+.credit-institution {
+  color: var(--ink-mute);
+  font-size: 10px;
+  margin-top: 2px;
+}
+.credit-institution a {
+  color: var(--ink-mute);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--line-soft);
+  transition: all 0.2s;
+}
+.credit-institution a:hover {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+.credit-version {
+  color: var(--ink-mute);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Responsivo: em telas pequenas, empilha o footer */
+@media (max-width: 720px) {
+  .footer-inner {
+    flex-direction: column;
+  }
+  .footer-credits {
+    text-align: left;
+    border-left: none;
+    border-top: 1px solid var(--line-soft);
+    padding-left: 0;
+    padding-top: 16px;
+    width: 100%;
+  }
+}
