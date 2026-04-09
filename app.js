@@ -264,7 +264,14 @@ async function callProviderSafe(sel, prompt, deterministic) {
       }
       parsed = JSON.parse(raw);
     } catch (e) {
-      return { error: 'Resposta não é JSON válido: ' + (data.text || '').slice(0, 120), elapsed, model: sel.model };
+      // Log completo no console pra debug — copie isso e envie ao dev
+      console.error(`[${sel.slot}] PARSE ERROR:`, e.message);
+      console.error(`[${sel.slot}] RAW RESPONSE (${(data.text || '').length} chars):`, data.text);
+      return {
+        error: `JSON inválido (${(data.text || '').length} chars). Veja console F12 para resposta completa. Prévia: ${(data.text || '').slice(0, 100)}`,
+        elapsed,
+        model: sel.model
+      };
     }
 
     return { parsed, elapsed, model: sel.model, raw: data.text };
