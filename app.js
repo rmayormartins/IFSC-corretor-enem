@@ -389,7 +389,132 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 }
 
+// ============== PAINEL DE PROMPT EDITÁVEL ==============
+const promptTextarea = $('#prompt-template');
+const promptStatus = $('#prompt-status');
+const profileSelect = $('#profile-select');
+
+function initPromptPanel() {
+  // Carrega template atual (custom ou padrão)
+  promptTextarea.value = getCurrentPromptTemplate();
+  updatePromptStatus();
+  refreshProfileList();
+}
+
+function updatePromptStatus() {
+  const modified = isPromptModified();
+  promptStatus.textContent = modified ? '(MODIFICADO)' : '(padrão)';
+  promptStatus.className = modified ? 'muted prompt-modified' : 'muted';
+
+  // Adiciona classe visual no painel todo quando modificado
+  const panel = $('#prompt-panel');
+  if (panel) panel.classList.toggle('is-modified', modified);
+}
+
+function refreshProfileList() {
+  const profiles = getProfiles();
+  const names = Object.keys(profiles).sort();
+  profileSelect.innerHTML = '<option value="">— selecione —</option>' +
+    names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+}
+
+$('#btn-save-prompt').addEventListener('click', () => {
+  const newTemplate = promptTextarea.value;
+  if (!newTemplate.includes('{{RUBRICA}}') || !newTemplate.includes('{{TEMA}}') || !newTemplate.includes('{{REDACAO}}')) {
+    if (!confirm('ATENÇÃO: o template não contém um ou mais placeholders obrigatórios ({{RUBRICA}}, {{TEMA}}, {{REDACAO}}). Isso pode quebrar a avaliação. Deseja salvar mesmo assim?')) {
+      return;
+    }
+  }
+  setCurrentPromptTemplate(newTemplate);
+  updatePromptStatus();
+  alert('✓ Prompt aplicado. Próximas correções usarão este template.');
+});
+
+$('#btn-reset-prompt').addEventListener('click', () => {
+  if (confirm('Restaurar o prompt para o padrão original? Suas alterações não salvas em perfil serão perdidas.')) {
+    resetPromptToDefault();
+    promptTextarea.value = PROMPT_TEMPLATE_DEFAULT;
+    updatePromptStatus();
+  }
+});
+
+$('#btn-save-profile').addEventListener('click', () => {
+  const name = prompt('Nome do perfil (ex: "com-cot", "severo", "few-shot"):');
+  if (!name || !name.trim()) return;
+  const clean = name.trim();
+  if (getProfiles()[clean]) {
+    if (!confirm(`Perfil "${clean}" já existe. Sobrescrever?`)) return;
+  }
+  saveProfile(clean, promptTextarea.value);
+  refreshProfileList();
+  profileSelect.value = clean;
+  alert(`✓ Perfil "${clean}" salvo.`);
+});
+
+$('#btn-load-profile').addEventListener('click', () => {
+  const name = profileSelect.value;
+  if (!name) { alert('Selecione um perfil primeiro.'); return; }
+  const template = loadProfile(name);
+  if (template) {
+    promptTextarea.value = template;
+    setCurrentPromptTemplate(template);
+    updatePromptStatus();
+    alert(`✓ Perfil "${name}" carregado e aplicado.`);
+  }
+});
+
+$('#btn-delete-profile').addEventListener('click', () => {
+  const name = profileSelect.value;
+  if (!name) { alert('Selecione um perfil primeiro.'); return; }
+  if (confirm(`Excluir o perfil "${name}" permanentemente?`)) {
+    deleteProfile(name);
+    refreshProfileList();
+  }
+});
+
+$('#btn-preview-prompt').addEventListener('click', () => {
+  const tema = $('#tema').value.trim() || '[TEMA NÃO PREENCHIDO]';
+  const redacao = $('#redacao').value.trim() || '[REDAÇÃO NÃO PREENCHIDA]';
+
+  // Salva temporariamente o template atual do textarea pra fazer preview
+  const saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+  localStorage.setItem(TEMPLATE_STORAGE_KEY, promptTextarea.value);
+  const preview = buildPrompt(tema, redacao);
+  // Restaura
+  if (saved === null) localStorage.removeItem(TEMPLATE_STORAGE_KEY);
+  else localStorage.setItem(TEMPLATE_STORAGE_KEY, saved);
+
+  // Abre uma janela com o preview
+  const w = window.open('', 'preview', 'width=900,height=700,scrollbars=yes');
+  w.document.write(`
+    <html><head><title>Preview do prompt final</title>
+    <style>
+      body { font-family: monospace; padding: 24px; background: #fbfaf5; color: #1a1a1a; line-height: 1.5; }
+      h1 { font-family: serif; font-weight: 400; border-bottom: 1px solid #ccc; padding-bottom: 8px; }
+      pre { white-space: pre-wrap; word-wrap: break-word; background: white; padding: 16px; border: 1px solid #ccc; font-size: 12px; }
+      .info { background: #e8f4e8; padding: 12px; border-left: 3px solid #2d5016; margin-bottom: 16px; font-family: sans-serif; font-size: 13px; }
+    </style></head><body>
+    <h1>Preview do prompt que será enviado</h1>
+    <div class="info">Este é o prompt final após substituição dos placeholders. Tamanho: <strong>${preview.length} caracteres</strong> (~${Math.round(preview.length/4)} tokens estimados).</div>
+    <pre>${escapeHtml(preview)}</pre>
+    </body></html>
+  `);
+});
+
+// Detecta edição não salva no textarea
+promptTextarea.addEventListener('input', () => {
+  const current = getCurrentPromptTemplate();
+  const textareaValue = promptTextarea.value;
+  if (textareaValue !== current) {
+    promptStatus.textContent = '(alterações não aplicadas)';
+    promptStatus.className = 'muted prompt-pending';
+  } else {
+    updatePromptStatus();
+  }
+});
+
 // ============== INIT ==============
 updateStats();
 checkEndpoint();
+initPromptPanel();
 if (!accessPassword) setTimeout(openConfig, 400);
