@@ -1,6 +1,6 @@
 /* ============================================
    RUBRICA OFICIAL — 5 COMPETÊNCIAS DO INEP
-   + Sistema de template editável
+   Baseada na Cartilha do Participante do ENEM
    ============================================ */
 
 const RUBRICA_INEP = {
@@ -89,33 +89,42 @@ const RUBRICA_INEP = {
 };
 
 /* ============================================
-   TEMPLATE EDITÁVEL DO PROMPT
-   Placeholders: {{RUBRICA}}, {{ZERAMENTO}}, {{TEMA}}, {{REDACAO}}
+   buildPrompt — constrói o prompt enviado às LLMs
    ============================================ */
 
-const PROMPT_TEMPLATE_DEFAULT = `Você é um avaliador de redações do ENEM treinado nas 5 competências do Inep.
+function buildPrompt(tema, redacao) {
+  const compsText = RUBRICA_INEP.competencias.map(c => {
+    const niveis = Object.entries(c.niveis)
+      .map(([nota, desc]) => `  • ${nota}: ${desc}`)
+      .join("\n");
+    return `${c.nome} — ${c.titulo}\n${c.descricao}\nNíveis possíveis (nota: descrição):\n${niveis}`;
+  }).join("\n\n");
+
+  const zeramentoText = RUBRICA_INEP.zeramento.map(z => `  - ${z}`).join("\n");
+
+  return `Você é um avaliador de redações do ENEM treinado nas 5 competências do Inep.
 Avalie a redação abaixo seguindo ESTRITAMENTE a rubrica oficial.
 
 ═══════════════════════════════════════
 RUBRICA OFICIAL — 5 COMPETÊNCIAS DO INEP
 ═══════════════════════════════════════
 
-{{RUBRICA}}
+${compsText}
 
 ═══════════════════════════════════════
 SITUAÇÕES DE NOTA ZERO (aplicar se identificado)
 ═══════════════════════════════════════
-{{ZERAMENTO}}
+${zeramentoText}
 
 ═══════════════════════════════════════
 TEMA PROPOSTO
 ═══════════════════════════════════════
-{{TEMA}}
+${tema}
 
 ═══════════════════════════════════════
 REDAÇÃO A SER AVALIADA
 ═══════════════════════════════════════
-{{REDACAO}}
+${redacao}
 
 ═══════════════════════════════════════
 TAREFA
@@ -127,7 +136,7 @@ Para cada competência, forneça:
 - "evidencia": uma citação CURTA (até 15 palavras) do texto que fundamenta a nota, ou null se não aplicável
 - "confianca": "alta", "media" ou "baixa"
 
-IMPORTANTE: Responda APENAS com um objeto JSON válido, começando com { e terminando com }. NÃO inclua markdown, NÃO use blocos de código com crase, NÃO adicione texto antes ou depois do JSON. A primeira caractere da sua resposta deve ser { e o último deve ser }.
+IMPORTANTE: Responda APENAS com um objeto JSON válido, começando com { e terminando com }. NÃO inclua markdown, NÃO use blocos de código com crase, NÃO adicione texto antes ou depois do JSON. O primeiro caractere da sua resposta deve ser { e o último deve ser }.
 
 Schema esperado:
 {
@@ -145,91 +154,4 @@ Schema esperado:
 
 Se identificar situação de zeramento, preencha "zeramento" com o motivo e atribua 0 em todas as competências afetadas.
 Seja consistente com a rubrica. Responda APENAS o JSON.`;
-
-/* ============================================
-   RENDERIZADORES DA RUBRICA
-   (geram strings que substituem os placeholders)
-   ============================================ */
-
-function renderRubricaTexto() {
-  return RUBRICA_INEP.competencias.map(c => {
-    const niveis = Object.entries(c.niveis)
-      .map(([nota, desc]) => `  • ${nota}: ${desc}`)
-      .join("\n");
-    return `${c.nome} — ${c.titulo}\n${c.descricao}\nNíveis possíveis (nota: descrição):\n${niveis}`;
-  }).join("\n\n");
-}
-
-function renderZeramentoTexto() {
-  return RUBRICA_INEP.zeramento.map(z => `  - ${z}`).join("\n");
-}
-
-/* ============================================
-   buildPrompt — substitui placeholders no template
-   ============================================ */
-
-function buildPrompt(tema, redacao) {
-  // Pega o template atual (editável) ou o default
-  const template = getCurrentPromptTemplate();
-
-  return template
-    .replace('{{RUBRICA}}', renderRubricaTexto())
-    .replace('{{ZERAMENTO}}', renderZeramentoTexto())
-    .replace('{{TEMA}}', tema)
-    .replace('{{REDACAO}}', redacao);
-}
-
-/* ============================================
-   Gerenciamento de template no localStorage
-   ============================================ */
-
-const TEMPLATE_STORAGE_KEY = 'corretor-enem-prompt-template';
-const PROFILES_STORAGE_KEY = 'corretor-enem-prompt-profiles';
-
-function getCurrentPromptTemplate() {
-  return localStorage.getItem(TEMPLATE_STORAGE_KEY) || PROMPT_TEMPLATE_DEFAULT;
-}
-
-function setCurrentPromptTemplate(template) {
-  if (template === PROMPT_TEMPLATE_DEFAULT) {
-    localStorage.removeItem(TEMPLATE_STORAGE_KEY);
-  } else {
-    localStorage.setItem(TEMPLATE_STORAGE_KEY, template);
-  }
-}
-
-function isPromptModified() {
-  return getCurrentPromptTemplate() !== PROMPT_TEMPLATE_DEFAULT;
-}
-
-function resetPromptToDefault() {
-  localStorage.removeItem(TEMPLATE_STORAGE_KEY);
-}
-
-function getProfiles() {
-  try {
-    return JSON.parse(localStorage.getItem(PROFILES_STORAGE_KEY) || '{}');
-  } catch {
-    return {};
-  }
-}
-
-function saveProfile(name, template) {
-  const profiles = getProfiles();
-  profiles[name] = {
-    template,
-    savedAt: new Date().toISOString(),
-  };
-  localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(profiles));
-}
-
-function loadProfile(name) {
-  const profiles = getProfiles();
-  return profiles[name] ? profiles[name].template : null;
-}
-
-function deleteProfile(name) {
-  const profiles = getProfiles();
-  delete profiles[name];
-  localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(profiles));
 }
