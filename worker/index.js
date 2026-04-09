@@ -154,7 +154,7 @@ async function callGroq(apiKey, model, prompt, temperature) {
       model,
       messages: [{ role: 'user', content: prompt }],
       temperature,
-      max_tokens: 2000,
+      max_tokens: 4000,
       response_format: { type: 'json_object' },
     }),
   });
@@ -179,7 +179,7 @@ async function callGoogle(apiKey, model, prompt, temperature) {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature,
-        maxOutputTokens: 2000,
+        maxOutputTokens: 4000,
       },
       safetySettings: [
         { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_ONLY_HIGH' },
@@ -219,7 +219,7 @@ async function callOpenRouter(apiKey, model, prompt, temperature) {
       model,
       messages: [{ role: 'user', content: prompt }],
       temperature,
-      max_tokens: 2000,
+      max_tokens: 4000,
     }),
   });
 
